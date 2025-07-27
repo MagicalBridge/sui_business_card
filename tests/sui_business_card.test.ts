@@ -66,10 +66,6 @@ describe('SUI Business Card Smart Contract Tests', () => {
       console.log('创建的 Favorites 对象 ID:', favoritesObjectId);
     });
 
-
-
-
-
     test('应该能够删除喜好信息', async () => {
       // 为这个测试创建一个新的对象
       const createTxb = new Transaction();
