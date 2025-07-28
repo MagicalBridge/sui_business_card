@@ -4,7 +4,6 @@ module sui_business_card::sui_business_card {
     use sui::transfer::transfer;
     use sui::tx_context::sender;
     use std::string::{utf8, length};
-    use std::vector;
 
     // 错误码定义
     const EColorTooLong: u64 = 1;
