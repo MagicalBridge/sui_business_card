@@ -1,20 +1,37 @@
 /// 用户业务名片合约 - 存储用户的喜好信息
 module sui_business_card::sui_business_card {
     use sui::object::{new, delete};
-    use sui::transfer::transfer;
+    use sui::transfer::{transfer, share_object};
     use sui::tx_context::sender;
-    use std::string::{utf8, length};
+    use sui::package::{Self, UpgradeCap};
+    use std::string::{utf8, length, String};
 
     // 错误码定义
     const EColorTooLong: u64 = 1;
     const ETooManyHobbies: u64 = 2;
     const EHobbyTooLong: u64 = 3;
     const EInvalidOwner: u64 = 4;
+    const ENotAdmin: u64 = 5;
 
     // 常量定义
     const MAX_COLOR_LENGTH: u64 = 50;
     const MAX_HOBBIES_COUNT: u64 = 5;
     const MAX_HOBBY_LENGTH: u64 = 50;
+    
+    // 版本常量
+    const CURRENT_VERSION: u64 = 1;
+
+    /// 管理员权限结构
+    public struct AdminCap has key {
+        id: sui::object::UID,
+    }
+
+    /// 合约版本信息
+    public struct ContractInfo has key {
+        id: sui::object::UID,
+        version: u64,
+        admin: address,
+    }
 
     /// 用户喜好数据结构
     public struct Favorites has key, store {
@@ -23,6 +40,66 @@ module sui_business_card::sui_business_card {
         number: u64,             // 喜欢的数字
         color: std::string::String,           // 喜欢的颜色
         hobbies: vector<std::string::String>, // 爱好列表
+    }
+
+    /// 包初始化函数 - 在包发布时自动调用
+    fun init(ctx: &mut sui::tx_context::TxContext) {
+        // 创建管理员权限对象
+        let admin_cap = AdminCap {
+            id: new(ctx)
+        };
+        
+        // 创建合约信息对象
+        let contract_info = ContractInfo {
+            id: new(ctx),
+            version: CURRENT_VERSION,
+            admin: sender(ctx),
+        };
+        
+        // 将管理员权限转移给部署者
+        transfer(admin_cap, sender(ctx));
+        
+        // 将合约信息设为共享对象，所有人都可以查看
+        share_object(contract_info);
+    }
+
+    /// 升级包的入口函数
+    public entry fun upgrade_contract(
+        upgrade_cap: &mut UpgradeCap,
+        _admin_cap: &AdminCap,
+        contract_info: &mut ContractInfo,
+        ctx: &sui::tx_context::TxContext
+    ) {
+        // 验证管理员权限
+        assert!(contract_info.admin == sender(ctx), ENotAdmin);
+        
+        // 这里可以添加升级前的准备工作
+        // 比如数据迁移、状态清理等
+        
+        // 更新版本号
+        contract_info.version = contract_info.version + 1;
+    }
+
+    /// 获取合约版本
+    public fun get_contract_version(contract_info: &ContractInfo): u64 {
+        contract_info.version
+    }
+
+    /// 转移管理员权限
+    public entry fun transfer_admin(
+        admin_cap: AdminCap,
+        contract_info: &mut ContractInfo,
+        new_admin: address,
+        ctx: &sui::tx_context::TxContext
+    ) {
+        // 验证当前管理员
+        assert!(contract_info.admin == sender(ctx), ENotAdmin);
+        
+        // 更新管理员地址
+        contract_info.admin = new_admin;
+        
+        // 转移权限对象
+        transfer(admin_cap, new_admin);
     }
 
     /// 设置用户喜好信息
@@ -115,22 +192,22 @@ module sui_business_card::sui_business_card {
 
     /// 获取用户喜好的数字
     public fun get_number(favorites: &Favorites): u64 {
-        favorites.number
+        return favorites.number
     }
 
     /// 获取用户喜好的颜色
     public fun get_color(favorites: &Favorites): std::string::String {
-        favorites.color
+        return favorites.color
     }
 
     /// 获取用户的爱好列表
     public fun get_hobbies(favorites: &Favorites): vector<std::string::String> {
-        favorites.hobbies
+        return favorites.hobbies
     }
 
     /// 获取拥有者地址
     public fun get_owner(favorites: &Favorites): address {
-        favorites.owner
+        return favorites.owner
     }
 
     /// 获取所有喜好信息（用于查询）
