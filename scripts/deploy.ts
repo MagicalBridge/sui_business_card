@@ -3,6 +3,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 export class ContractDeployer {
+  // 网络
   private network: string;
 
   constructor(network?: string) {
@@ -23,9 +24,10 @@ export class ContractDeployer {
    */
   private getCurrentActiveNetwork(): string {
     try {
+      // 获取当前激活的网络环境
       const envsOutput = execSync('sui client envs', { 
-        cwd: process.cwd(), 
-        encoding: 'utf8' 
+        cwd: process.cwd(),  // 当前工作目录
+        encoding: 'utf8'  // 编码方式
       });
 
       // 解析输出，找到标记为活跃的网络（带 * 标记）
@@ -42,6 +44,7 @@ export class ContractDeployer {
       
       // 如果没有找到活跃网络，返回默认值
       console.warn('未能检测到当前激活的网络，使用默认的 localnet');
+
       return 'localnet';
     } catch (error) {
       console.warn('检测网络环境失败，使用默认的 localnet:', error);
@@ -53,12 +56,14 @@ export class ContractDeployer {
    * 从 Move.toml 文件中读取项目名称
    */
   private getProjectName(): string {
+    // 获取 Move.toml 文件路径
     const moveTomlPath = path.join(process.cwd(), 'Move.toml');
     
     if (!fs.existsSync(moveTomlPath)) {
       throw new Error('Move.toml 文件不存在');
     }
 
+    // 读取 Move.toml 文件内容
     const moveTomlContent = fs.readFileSync(moveTomlPath, 'utf8');
     
     // 解析 TOML 中的 name 字段
