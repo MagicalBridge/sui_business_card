@@ -120,7 +120,7 @@ export class ContractDeployer {
       // 使用sui client publish发布合约
       console.log('发布合约到Sui网络...');
       
-      const publishCommand = 'sui client publish --gas-budget 20000000 --json';
+      const publishCommand = 'sui client publish --gas-budget 200000000 --json';
       const result = execSync(publishCommand, { 
         cwd: process.cwd(), 
         encoding: 'utf8' 
