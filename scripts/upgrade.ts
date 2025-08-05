@@ -85,7 +85,7 @@ export class ContractUpgrader {
 
       // 执行升级
       console.log('\n执行合约升级...');
-      const upgradeCommand = `sui client upgrade --package-id ${this.packageId} --upgrade-capability ${this.upgradeCapId} --gas-budget 200000000 --json`;
+      const upgradeCommand = `sui client upgrade --upgrade-capability ${this.upgradeCapId} --gas-budget 200000000 --json`;
       
       const result = execSync(upgradeCommand, { 
         cwd: process.cwd(), 

@@ -1,9 +1,10 @@
 /// 用户业务名片合约 - 存储用户的喜好信息
 module sui_business_card::sui_business_card {
-    use sui::object::{new, delete};
+    use sui::object::{new, delete, uid_to_address};
     use sui::transfer::{transfer, share_object};
-    use sui::tx_context::sender;
+    use sui::tx_context::{sender, epoch_timestamp_ms};
     use sui::package::{Self, UpgradeCap};
+    use sui::event;
     use std::string::{utf8, length, String};
 
     // 错误码定义
@@ -19,7 +20,51 @@ module sui_business_card::sui_business_card {
     const MAX_HOBBY_LENGTH: u64 = 50;
     
     // 版本常量
-    const CURRENT_VERSION: u64 = 1;
+    const CURRENT_VERSION: u64 = 2;
+
+    // =============== 事件定义 ===============
+    
+    /// 喜好信息创建事件
+    public struct FavoritesCreated has copy, drop {
+        favorites_id: address,
+        owner: address,
+        number: u64,
+        color: std::string::String,
+        hobbies_count: u64,
+    }
+
+    /// 喜好信息更新事件
+    public struct FavoritesUpdated has copy, drop {
+        favorites_id: address,
+        owner: address,
+        old_number: u64,
+        new_number: u64,
+        old_color: std::string::String,
+        new_color: std::string::String,
+    }
+
+    /// 喜好信息删除事件
+    public struct FavoritesDeleted has copy, drop {
+        favorites_id: address,
+        owner: address,
+    }
+
+    /// 管理员权限转移事件
+    public struct AdminTransferred has copy, drop {
+        old_admin: address,
+        new_admin: address,
+        timestamp: u64,
+    }
+
+    /// 合约升级事件
+    public struct ContractUpgraded has copy, drop {
+        old_version: u64,
+        new_version: u64,
+        admin: address,
+        timestamp: u64,
+    }
+
+    // =============== 结构定义 ===============
 
     /// 管理员权限结构
     public struct AdminCap has key {
@@ -73,11 +118,22 @@ module sui_business_card::sui_business_card {
         // 验证管理员权限
         assert!(contract_info.admin == sender(ctx), ENotAdmin);
         
+        // 记录旧版本号
+        let old_version = contract_info.version;
+        
         // 这里可以添加升级前的准备工作
         // 比如数据迁移、状态清理等
         
         // 更新版本号
         contract_info.version = contract_info.version + 1;
+        
+        // 发射合约升级事件
+        event::emit(ContractUpgraded {
+            old_version,
+            new_version: contract_info.version,
+            admin: sender(ctx),
+            timestamp: epoch_timestamp_ms(ctx),
+        });
     }
 
     /// 获取合约版本
@@ -95,8 +151,17 @@ module sui_business_card::sui_business_card {
         // 验证当前管理员
         assert!(contract_info.admin == sender(ctx), ENotAdmin);
         
+        let old_admin = contract_info.admin;
+        
         // 更新管理员地址
         contract_info.admin = new_admin;
+        
+        // 发射管理员转移事件
+        event::emit(AdminTransferred {
+            old_admin,
+            new_admin,
+            timestamp: epoch_timestamp_ms(ctx),
+        });
         
         // 转移权限对象
         transfer(admin_cap, new_admin);
@@ -144,6 +209,15 @@ module sui_business_card::sui_business_card {
             hobbies: hobbies_strings,
         };
 
+        // 发射喜好创建事件
+        event::emit(FavoritesCreated {
+            favorites_id: uid_to_address(&favorites.id),
+            owner: sender,
+            number,
+            color: color_string,
+            hobbies_count: vector::length(&hobbies_strings),
+        });
+
         // 将对象转移给调用者
         transfer(favorites, sender);
     }
@@ -163,6 +237,10 @@ module sui_business_card::sui_business_card {
     ) {
         // 验证调用者是否为拥有者
         assert!(favorites.owner == sender(ctx), EInvalidOwner);
+        
+        // 记录旧值用于事件
+        let old_number = favorites.number;
+        let old_color = favorites.color;
         
         // 转换颜色为String并验证长度
         let color_string = utf8(color);
@@ -188,6 +266,16 @@ module sui_business_card::sui_business_card {
         favorites.number = number;
         favorites.color = color_string;
         favorites.hobbies = hobbies_strings;
+        
+        // 发射更新事件
+        event::emit(FavoritesUpdated {
+            favorites_id: uid_to_address(&favorites.id),
+            owner: favorites.owner,
+            old_number,
+            new_number: number,
+            old_color,
+            new_color: color_string,
+        });
     }
 
     /// 获取用户喜好的数字
@@ -217,6 +305,12 @@ module sui_business_card::sui_business_card {
 
     /// 删除喜好对象
     public entry fun delete_favorites(favorites: Favorites, _ctx: &sui::tx_context::TxContext) {
+        // 发射删除事件（在删除前发射，因为删除后对象就不存在了）
+        event::emit(FavoritesDeleted {
+            favorites_id: uid_to_address(&favorites.id),
+            owner: favorites.owner,
+        });
+        
         let Favorites { id, owner: _, number: _, color: _, hobbies: _ } = favorites;
         delete(id);
     }
