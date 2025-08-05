@@ -1,5 +1,5 @@
-# Sui Business Card Contract Deployment Information
-# Generated on: 2025-01-04
+Sui Business Card Contract Deployment Information
+Generated on: 2025-01-04
 
 Network: devnet
 Package ID: 0x6f6b570275ca0ecdbd2513e7c4ca27692becdac8863435414a5a6c3d2a3c2854
@@ -9,8 +9,5 @@ Contract Info ID: 0xa2e56de1d8c5594b05e1bbe72ead353b58c50389c348a62e249f7126eb10
 Deployer Address: 0x2b2de21fdb1400064ee37ca9e459c1bac13fc0ee1eebc676fc499e59c7f1559b
 Transaction Hash: E1Yq2LtdAXKUyNUhSuxH2Hu2vkKAfbsxqWoJnXnJB4rf
 
-# Gas Used: 0.020192280 SUI
-# Status: Successfully deployed to devnet
-
-# 在 Sui Explorer 中查看:
-# https://devnet.suivision.xyz/package/0x6f6b570275ca0ecdbd2513e7c4ca27692becdac8863435414a5a6c3d2a3c2854
+Gas Used: 0.020192280 SUI
+Status: Successfully deployed to devnet
