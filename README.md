@@ -35,10 +35,12 @@ sui client balance
 │ ╰──────────────────────────────────╯   │
 ╰────────────────────────────────────────╯
 
-
 # 列出所有密钥信息
 sui keytool list
 
 # 导出私钥（使用地址）
 sui keytool export --key-identity [你的地址]
+
+# 查看对象
+sui client object 0xcbb1fa1e99ba3103cbf23550ac52bf5b622f2aff2f21ee9595177ca625ad626a
 ```
